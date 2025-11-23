@@ -50,44 +50,65 @@ export default async function handler(req, res) {
       content: message
     });
 
-    console.log('⏳ Ejecutando assistant...');
+    console.log('⏳ Ejecutando assistant con streaming...');
 
-    // Ejecutar el assistant y esperar respuesta
-    const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
+    // Configurar headers para Server-Sent Events (SSE)
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Desactivar buffering en nginx/vercel
+
+    // Enviar threadId primero
+    res.write(`data: ${JSON.stringify({ type: 'thread', threadId: thread.id })}\n\n`);
+    res.flush?.(); // Forzar envío inmediato si flush está disponible
+
+    // Stream de la respuesta del assistant
+    const stream = openai.beta.threads.runs.stream(thread.id, {
       assistant_id: ASSISTANT_ID,
     });
 
-    console.log('✅ Run completado con estado:', run.status);
-
-    if (run.status === 'completed') {
-      // Obtener mensajes del thread
-      const messages = await openai.beta.threads.messages.list(thread.id);
-      
-      // La respuesta más reciente del assistant
-      const assistantMessage = messages.data[0];
-      const responseText = assistantMessage.content[0].text.value;
-
-      console.log('💬 Respuesta generada');
-
-      return res.status(200).json({
-        response: responseText,
-        threadId: thread.id
+    // Manejar eventos del stream
+    stream
+      .on('textCreated', () => {
+        console.log('🎬 Texto iniciado');
+        res.write(`data: ${JSON.stringify({ type: 'start' })}\n\n`);
+        res.flush?.();
+      })
+      .on('textDelta', (textDelta) => {
+        const chunk = textDelta.value;
+        if (chunk) {
+          const timestamp = new Date().toISOString().split('T')[1];
+          console.log(`📝 [${timestamp}] Chunk (${chunk.length} chars):`, chunk.substring(0, 50));
+          res.write(`data: ${JSON.stringify({ type: 'text', content: chunk })}\n\n`);
+          res.flush?.(); // Forzar envío inmediato de cada chunk
+        }
+      })
+      .on('textDone', () => {
+        console.log('✅ Texto completado');
+      })
+      .on('end', () => {
+        console.log('🏁 Stream finalizado');
+        res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+        res.end();
+      })
+      .on('error', (error) => {
+        console.error('❌ Error en stream:', error);
+        res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
+        res.end();
       });
-    } else if (run.status === 'failed') {
-      console.error('❌ Run falló:', run.last_error);
-      return res.status(500).json({ 
-        error: 'El assistant falló: ' + (run.last_error?.message || 'Error desconocido')
-      });
-    } else {
-      return res.status(500).json({ 
-        error: `El assistant terminó con estado inesperado: ${run.status}` 
-      });
-    }
 
   } catch (error) {
     console.error('❌ Error en handler:', error);
-    return res.status(500).json({ 
-      error: error.message || 'Error interno del servidor'
-    });
+
+    // Si ya empezó el streaming, enviar error por SSE
+    if (res.headersSent) {
+      res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
+      res.end();
+    } else {
+      // Si no, enviar error JSON normal
+      return res.status(500).json({
+        error: error.message || 'Error interno del servidor'
+      });
+    }
   }
 }

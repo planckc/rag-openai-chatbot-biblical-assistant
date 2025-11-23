@@ -229,6 +229,44 @@
             }
         }
 
+        .typing-cursor {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+            margin-left: 4px;
+        }
+
+        .typing-cursor-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            animation: typingBounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-cursor-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-cursor-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-cursor-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-8px);
+                opacity: 1;
+            }
+        }
+
         .new-chat-btn {
             background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.3);
@@ -329,11 +367,8 @@ Tengo acceso a documentos sobre la Iglesia Apostólica y puedo ayudarte con:
             messageDiv.appendChild(contentDiv);
             chatMessages.appendChild(messageDiv);
             
-            // Scroll al final con animación suave
-            chatMessages.scrollTo({
-                top: chatMessages.scrollHeight,
-                behavior: 'smooth'
-            });
+            // Scroll al final instantáneo para mejor UX
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
         // Mostrar loading
@@ -341,11 +376,11 @@ Tengo acceso a documentos sobre la Iglesia Apostólica y puedo ayudarte con:
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'message assistant';
             loadingDiv.id = 'loading-message';
-            
+
             const avatarDiv = document.createElement('div');
             avatarDiv.className = 'message-avatar';
             avatarDiv.textContent = '🤖';
-            
+
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
             contentDiv.innerHTML = `
@@ -355,20 +390,95 @@ Tengo acceso a documentos sobre la Iglesia Apostólica y puedo ayudarte con:
                     <div class="loading-dot"></div>
                 </div>
             `;
-            
+
             loadingDiv.appendChild(avatarDiv);
             loadingDiv.appendChild(contentDiv);
             chatMessages.appendChild(loadingDiv);
-            
-            chatMessages.scrollTo({
-                top: chatMessages.scrollHeight,
-                behavior: 'smooth'
-            });
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
         function removeLoading() {
             const loadingMsg = document.getElementById('loading-message');
             if (loadingMsg) loadingMsg.remove();
+        }
+
+        // Cursor parpadeante para indicar que está escribiendo
+        function addTypingCursor(element) {
+            const cursor = document.createElement('span');
+            cursor.className = 'typing-cursor';
+
+            // Crear 3 puntos animados
+            for (let i = 0; i < 3; i++) {
+                const dot = document.createElement('span');
+                dot.className = 'typing-cursor-dot';
+                cursor.appendChild(dot);
+            }
+
+            element.appendChild(cursor);
+            return cursor;
+        }
+
+        // Cola de texto para efecto de escritura progresiva
+        class TextQueue {
+            constructor(element, cursor, onComplete) {
+                this.element = element;
+                this.cursor = cursor;
+                this.onComplete = onComplete;
+                this.queue = [];
+                this.isProcessing = false;
+                this.isDone = false;
+            }
+
+            add(text) {
+                this.queue.push(text);
+                if (!this.isProcessing) {
+                    this.process();
+                }
+            }
+
+            async process() {
+                this.isProcessing = true;
+
+                while (this.queue.length > 0 || !this.isDone) {
+                    if (this.queue.length === 0) {
+                        // Esperar un poco por más texto
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                        continue;
+                    }
+
+                    const text = this.queue.shift();
+
+                    // Escribir el texto carácter por carácter
+                    for (let char of text) {
+                        // Remover cursor temporalmente
+                        if (this.cursor.parentNode) {
+                            this.cursor.remove();
+                        }
+
+                        // Agregar el carácter
+                        this.element.textContent += char;
+
+                        // Volver a agregar el cursor
+                        this.element.appendChild(this.cursor);
+
+                        // Auto-scroll
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                        // Delay entre caracteres (ajustable para velocidad)
+                        await new Promise(resolve => setTimeout(resolve, 15));
+                    }
+                }
+
+                this.isProcessing = false;
+                if (this.onComplete) {
+                    this.onComplete();
+                }
+            }
+
+            finish() {
+                this.isDone = true;
+            }
         }
 
         // Nueva conversación
@@ -387,27 +497,57 @@ Tengo acceso a documentos sobre la Iglesia Apostólica y puedo ayudarte con:
             }
         }
 
-        // Manejar envío del formulario
+        // Manejar envío del formulario con streaming
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const message = messageInput.value.trim();
             if (!message) return;
 
             // Agregar mensaje del usuario
             addMessage(message, true);
             messageInput.value = '';
-            
+
             // Deshabilitar input mientras procesa
             sendButton.disabled = true;
             sendButton.textContent = 'Enviando...';
             messageInput.disabled = true;
-            showLoading();
+
+            // Remover loading y crear mensaje del assistant vacío
+            removeLoading();
+
+            // Scroll inmediato después de agregar el mensaje del usuario
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'message-avatar';
+            avatarDiv.textContent = '🤖';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = '';
+
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(contentDiv);
+            chatMessages.appendChild(messageDiv);
+
+            // Scroll para mostrar el mensaje del asistente que se está creando
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Agregar cursor de escritura
+            const cursor = addTypingCursor(contentDiv);
+
+            // Crear cola de texto para efecto de escritura
+            const textQueue = new TextQueue(contentDiv, cursor, () => {
+                cursor.remove();
+            });
 
             try {
-                console.log('Enviando mensaje a:', '/api/chat');
-                
-                // Llamar a tu API de Vercel
+                console.log('Enviando mensaje con streaming a:', '/api/chat');
+
+                // Llamar a tu API de Vercel con streaming
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
@@ -419,28 +559,68 @@ Tengo acceso a documentos sobre la Iglesia Apostólica y puedo ayudarte con:
                     })
                 });
 
-                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
-                const data = await response.json();
-                console.log('Response data:', data);
+                // Leer el stream usando EventSource manual
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
 
-                if (response.ok) {
-                    // Guardar threadId para mantener conversación
-                    threadId = data.threadId;
-                    localStorage.setItem('chatThreadId', threadId);
-                    
-                    // Mostrar respuesta del assistant
-                    removeLoading();
-                    addMessage(data.response, false);
-                } else {
-                    removeLoading();
-                    addMessage(`❌ Error: ${data.error}`, false);
+                while (true) {
+                    const { done, value } = await reader.read();
+
+                    if (done) {
+                        console.log('Stream completado');
+                        break;
+                    }
+
+                    // Decodificar el chunk
+                    buffer += decoder.decode(value, { stream: true });
+
+                    // Procesar líneas completas
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Guardar línea incompleta
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6));
+
+                            if (data.type === 'thread') {
+                                // Guardar threadId
+                                threadId = data.threadId;
+                                localStorage.setItem('chatThreadId', threadId);
+                                console.log('Thread ID recibido:', threadId);
+                            } else if (data.type === 'text') {
+                                // Log para debugging
+                                const timestamp = new Date().toISOString().split('T')[1];
+                                console.log(`🔹 [${timestamp}] Chunk recibido (${data.content.length} chars):`, data.content.substring(0, 30));
+
+                                // Agregar texto a la cola para efecto de escritura
+                                textQueue.add(data.content);
+                            } else if (data.type === 'error') {
+                                textQueue.finish();
+                                cursor.remove();
+                                contentDiv.textContent = `❌ Error: ${data.error}`;
+                            } else if (data.type === 'done') {
+                                console.log('Respuesta completada');
+                                textQueue.finish();
+                            }
+                        }
+                    }
+                }
+
+                // Si el mensaje quedó vacío, mostrar error
+                if (!contentDiv.textContent) {
+                    contentDiv.textContent = '❌ No se recibió respuesta del servidor';
                 }
 
             } catch (error) {
                 console.error('Error completo:', error);
-                removeLoading();
-                addMessage(`❌ Error de conexión: ${error.message}. Verifica que el servidor esté funcionando.`, false);
+                textQueue.finish();
+                if (cursor && cursor.parentNode) cursor.remove();
+                contentDiv.textContent = `❌ Error de conexión: ${error.message}. Verifica que el servidor esté funcionando.`;
             } finally {
                 // Re-habilitar input
                 sendButton.disabled = false;
