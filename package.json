@@ -1,0 +1,15 @@
+{
+  "name": "rag-openai-chatbot",
+  "version": "1.0.0",
+  "description": "Chatbot biblico con OpenAI Assistant API",
+  "type": "module",
+  "scripts": {
+    "deploy": "vercel --prod"
+  },
+  "keywords": ["openai", "chatbot", "assistant", "vercel"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "openai": "^4.73.0"
+  }
+}

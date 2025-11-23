@@ -1,0 +1,88 @@
+═══════════════════════════════════════════════════════════════
+  🚀 GUÍA DE INICIO RÁPIDO - Chatbot OpenAI Assistant
+═══════════════════════════════════════════════════════════════
+
+📍 UBICACIÓN DEL PROYECTO:
+   C:\workspace\CLAUDE\rag-openai-chatbot
+
+══════════════════════════════════════════════════════════════
+
+⚡ PASOS PARA EMPEZAR (5 minutos):
+
+1️⃣ INSTALAR DEPENDENCIAS
+   cd C:\workspace\CLAUDE\rag-openai-chatbot
+   npm install
+
+2️⃣ CONFIGURAR API KEY DE OPENAI
+   - Edita: .env.local
+   - Reemplaza: OPENAI_API_KEY=tu-api-key-aqui
+   - Con tu key de: https://platform.openai.com/api-keys
+
+3️⃣ VERIFICAR ASSISTANT ID
+   - Abre: api\chat.js
+   - Línea 8: const ASSISTANT_ID = "asst_1OdQqHD2pLPmc6ofIHFFfj8w"
+   - (Ya está configurado con tu Assistant actual)
+
+4️⃣ INSTALAR VERCEL CLI (primera vez)
+   npm install -g vercel
+
+5️⃣ EJECUTAR EN LOCAL
+   vercel dev
+   
+   ✅ Abre: http://localhost:3000
+
+══════════════════════════════════════════════════════════════
+
+🌐 DEPLOY A PRODUCCIÓN:
+
+Opción A - Desde terminal:
+   vercel --prod
+
+Opción B - Desde Vercel Dashboard:
+   1. Sube tu código a GitHub
+   2. Ve a: https://vercel.com
+   3. "Add New" → "Project"
+   4. Importa tu repo
+   5. Agrega variable: OPENAI_API_KEY
+   6. Deploy
+
+══════════════════════════════════════════════════════════════
+
+📝 ARCHIVOS IMPORTANTES:
+
+✅ api/chat.js         → Backend (conexión con OpenAI)
+✅ public/index.html   → Frontend (interfaz del chat)
+✅ .env.local          → API Key (NO subir a Git)
+✅ README.md           → Documentación completa
+
+══════════════════════════════════════════════════════════════
+
+🔧 SI ALGO FALLA:
+
+❌ "Module not found: openai"
+   → npm install
+
+❌ "Invalid API Key"  
+   → Revisa .env.local
+
+❌ La página no carga
+   → vercel dev (reiniciar)
+
+❌ Error 500 en producción
+   → Verifica variable OPENAI_API_KEY en Vercel
+
+══════════════════════════════════════════════════════════════
+
+💡 PRÓXIMOS PASOS:
+
+1. Personaliza el diseño en public/index.html
+2. Sube más archivos a tu Assistant en OpenAI
+3. Modifica las instrucciones del sistema
+4. Agrega dominio custom en Vercel
+
+══════════════════════════════════════════════════════════════
+
+📚 Documentación completa: README.md
+🆘 Soporte: https://platform.openai.com/docs/assistants
+
+══════════════════════════════════════════════════════════════
