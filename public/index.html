@@ -26,29 +26,15 @@
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             width: 100%;
-            max-width: 900px;
-            height: 700px;
+            max-width: 1400px;
+            height: 85vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
         .chat-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px;
-            text-align: center;
-        }
-
-        .chat-header h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .chat-header p {
-            font-size: 14px;
-            opacity: 0.95;
+            display: none; /* Eliminado completamente */
         }
 
         .chat-messages {
@@ -265,11 +251,139 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
+        /* Pantalla de bienvenida estilo ChatGPT */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 60px 20px 40px;
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .welcome-screen.hidden {
+            display: none;
+        }
+
+        .welcome-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .welcome-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            animation: fadeIn 0.7s ease;
+        }
+
+        .welcome-description {
+            font-size: 15px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .conversation-starters {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 20px;
+            animation: fadeIn 0.9s ease;
+        }
+
+        .new-chat-starter-btn {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            color: #667eea;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            grid-column: 1 / -1;
+        }
+
+        .new-chat-starter-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+        }
+
+        .footer-credits {
+            margin-top: auto;
+            padding-top: 20px;
+            font-size: 11px;
+            color: #999;
+            text-align: center;
+        }
+
+        .footer-credits a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer-credits a:hover {
+            text-decoration: underline;
+        }
+
+        .starter-button {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            color: #333;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .starter-button:hover {
+            background: #f8f9fa;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         @media (max-width: 768px) {
             .chat-container {
                 height: 100vh;
                 border-radius: 0;
                 max-width: 100%;
+                height: 100vh;
             }
 
             body {
@@ -278,6 +392,43 @@
 
             .message-content {
                 max-width: 85%;
+            }
+
+            .conversation-starters {
+                grid-template-columns: 1fr;
+                max-width: 100%;
+            }
+
+            .welcome-screen {
+                padding: 40px 15px 20px;
+                max-width: 100%;
+            }
+
+            .welcome-icon {
+                font-size: 48px;
+            }
+
+            .welcome-title {
+                font-size: 22px;
+            }
+
+            .welcome-description {
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+
+            .starter-button {
+                font-size: 13px;
+                padding: 14px 16px;
+            }
+
+            .new-chat-starter-btn {
+                font-size: 13px;
+                padding: 14px 16px;
+            }
+
+            .chat-input {
+                font-size: 16px; /* Previene zoom en iOS */
             }
         }
     </style>
@@ -291,28 +442,47 @@
         </div>
 
         <div class="chat-messages" id="chatMessages">
-            <div class="message assistant">
-                <div class="message-avatar">🤖</div>
-                <div class="message-content">¡Hola! Soy tu asistente bíblico especializado en la versión Reina-Valera 1960. 
-                    
-Tengo acceso a documentos sobre la Iglesia Apostólica y puedo ayudarte con:
-                    
-• Explicaciones de pasajes bíblicos
-• Búsqueda de versículos específicos
-• Contexto histórico y teológico
-• Análisis de temas bíblicos
-                    
-¿En qué puedo ayudarte hoy?</div>
+            <!-- Pantalla de bienvenida -->
+            <div class="welcome-screen" id="welcomeScreen">
+                <div class="welcome-icon">📖</div>
+                <h2 class="welcome-title">Concordancia bíblica inteligente</h2>
+                <p class="welcome-subtitle">✓ Se está usando el modelo recomendado por el creador: GPT-5</p>
+                <p class="welcome-description">
+                    Más que una concordancia, este recurso te ayuda a entender lo que la
+                    Biblia dice sobre una palabra o un tema, dándote citas bíblicas, raíces en
+                    hebreo o griego, referencias Strong y aplicación según las doctrinas
+                    cristianas bíblicas.
+                </p>
+                <div class="conversation-starters">
+                    <button class="starter-button" onclick="sendStarterMessage('Iglesia')">
+                        Iglesia (ingresa solo una palabra)
+                    </button>
+                    <button class="starter-button" onclick="sendStarterMessage('Últimos tiempos')">
+                        Últimos tiempos (ingresa una frase corta)
+                    </button>
+                    <button class="starter-button" onclick="sendStarterMessage('¿Qué dice la Biblia sobre la fe?')">
+                        ¿Qué dice la Biblia sobre la fe?
+                    </button>
+                    <button class="starter-button" onclick="sendStarterMessage('Muéstrame versículos sobre el amor')">
+                        Muéstrame versículos sobre el amor
+                    </button>
+                    <button class="new-chat-starter-btn" onclick="startNewChat()">
+                        🔄 Nueva conversación
+                    </button>
+                </div>
+                <div class="footer-credits">
+                    Creado por <a href="https://sinode.org" target="_blank">SINODE</a> © 2025
+                </div>
             </div>
         </div>
 
         <div class="chat-input-container">
             <form class="chat-input-form" id="chatForm">
-                <input 
-                    type="text" 
-                    class="chat-input" 
-                    id="messageInput" 
-                    placeholder="Escribe tu pregunta sobre la Biblia..."
+                <input
+                    type="text"
+                    class="chat-input"
+                    id="messageInput"
+                    placeholder="Escribe tu pregunta a la Concordancia bíblica inteligente..."
                     autocomplete="off"
                     required
                 >
@@ -341,10 +511,10 @@ Tengo acceso a documentos sobre la Iglesia Apostólica y puedo ayudarte con:
         function addMessage(text, isUser) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
-            
+
             const avatarDiv = document.createElement('div');
             avatarDiv.className = 'message-avatar';
-            avatarDiv.textContent = isUser ? '👤' : '🤖';
+            avatarDiv.textContent = isUser ? '👤' : '📖';
             
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
@@ -462,17 +632,66 @@ Tengo acceso a documentos sobre la Iglesia Apostólica y puedo ayudarte con:
             }
         }
 
+        // Función para enviar mensaje desde botones de starter
+        function sendStarterMessage(message) {
+            messageInput.value = message;
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+
+        // Ocultar pantalla de bienvenida cuando hay mensajes
+        function hideWelcomeScreen() {
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            if (welcomeScreen) {
+                welcomeScreen.classList.add('hidden');
+            }
+        }
+
+        // Mostrar pantalla de bienvenida
+        function showWelcomeScreen() {
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            if (welcomeScreen) {
+                welcomeScreen.classList.remove('hidden');
+            }
+        }
+
         // Nueva conversación
         function startNewChat() {
             if (confirm('¿Deseas iniciar una nueva conversación? Se perderá el historial actual.')) {
                 localStorage.removeItem('chatThreadId');
                 threadId = null;
-                
-                // Limpiar mensajes
+
+                // Limpiar mensajes y mostrar bienvenida
                 chatMessages.innerHTML = `
-                    <div class="message assistant">
-                        <div class="message-avatar">🤖</div>
-                        <div class="message-content">¡Hola! Soy tu asistente bíblico. ¿En qué puedo ayudarte hoy?</div>
+                    <div class="welcome-screen" id="welcomeScreen">
+                        <div class="welcome-icon">📖</div>
+                        <h2 class="welcome-title">Concordancia bíblica inteligente</h2>
+                        <p class="welcome-subtitle">✓ Se está usando el modelo recomendado por el creador: GPT-5</p>
+                        <p class="welcome-description">
+                            Más que una concordancia, este recurso te ayuda a entender lo que la
+                            Biblia dice sobre una palabra o un tema, dándote citas bíblicas, raíces en
+                            hebreo o griego, referencias Strong y aplicación según las doctrinas
+                            cristianas bíblicas.
+                        </p>
+                        <div class="conversation-starters">
+                            <button class="starter-button" onclick="sendStarterMessage('Iglesia')">
+                                Iglesia (ingresa solo una palabra)
+                            </button>
+                            <button class="starter-button" onclick="sendStarterMessage('Últimos tiempos')">
+                                Últimos tiempos (ingresa una frase corta)
+                            </button>
+                            <button class="starter-button" onclick="sendStarterMessage('¿Qué dice la Biblia sobre la fe?')">
+                                ¿Qué dice la Biblia sobre la fe?
+                            </button>
+                            <button class="starter-button" onclick="sendStarterMessage('Muéstrame versículos sobre el amor')">
+                                Muéstrame versículos sobre el amor
+                            </button>
+                            <button class="new-chat-starter-btn" onclick="startNewChat()">
+                                🔄 Nueva conversación
+                            </button>
+                        </div>
+                        <div class="footer-credits">
+                            Creado por <a href="https://sinode.org" target="_blank">SINODE</a> © 2025
+                        </div>
                     </div>
                 `;
             }
@@ -484,6 +703,9 @@ Tengo acceso a documentos sobre la Iglesia Apostólica y puedo ayudarte con:
 
             const message = messageInput.value.trim();
             if (!message) return;
+
+            // Ocultar pantalla de bienvenida al enviar primer mensaje
+            hideWelcomeScreen();
 
             // Agregar mensaje del usuario
             addMessage(message, true);
