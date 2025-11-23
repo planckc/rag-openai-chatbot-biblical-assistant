@@ -1,6 +1,11 @@
 // api/chat.js
 import OpenAI from 'openai';
 
+// ============================================
+// CONFIGURACIÓN GLOBAL DE DEBUGGING
+// ============================================
+const DEBUG_MODE = false; // Cambiar a true para activar logs detallados en servidor
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
@@ -31,17 +36,19 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Mensaje requerido' });
     }
 
-    console.log('📨 Mensaje recibido:', message);
-    console.log('🧵 Thread ID:', threadId || 'nuevo');
+    if (DEBUG_MODE) {
+      console.log('📨 Mensaje recibido:', message);
+      console.log('🧵 Thread ID:', threadId || 'nuevo');
+    }
 
     // Crear nuevo thread o usar existente
     let thread;
     if (threadId) {
       thread = { id: threadId };
-      console.log('♻️ Usando thread existente');
+      if (DEBUG_MODE) console.log('♻️ Usando thread existente');
     } else {
       thread = await openai.beta.threads.create();
-      console.log('🆕 Thread nuevo creado:', thread.id);
+      if (DEBUG_MODE) console.log('🆕 Thread nuevo creado:', thread.id);
     }
 
     // Agregar mensaje del usuario al thread
@@ -50,7 +57,7 @@ export default async function handler(req, res) {
       content: message
     });
 
-    console.log('⏳ Ejecutando assistant con streaming...');
+    if (DEBUG_MODE) console.log('⏳ Ejecutando assistant con streaming...');
 
     // Configurar headers para Server-Sent Events (SSE)
     res.setHeader('Content-Type', 'text/event-stream');
@@ -70,34 +77,39 @@ export default async function handler(req, res) {
     // Manejar eventos del stream
     stream
       .on('textCreated', () => {
-        console.log('🎬 Texto iniciado');
+        if (DEBUG_MODE) console.log('🎬 Texto iniciado');
         res.write(`data: ${JSON.stringify({ type: 'start' })}\n\n`);
         res.flush?.();
       })
       .on('textDelta', (textDelta) => {
         const chunk = textDelta.value;
         if (chunk) {
-          const timestamp = new Date().toISOString().split('T')[1];
-          console.log(`📝 [${timestamp}] Chunk (${chunk.length} chars):`, chunk.substring(0, 50));
+          // Log detallado solo en modo debug
+          if (DEBUG_MODE) {
+            const timestamp = new Date().toISOString().split('T')[1];
+            console.log(`📝 [${timestamp}] Chunk (${chunk.length} chars):`, chunk.substring(0, 50));
+          }
           res.write(`data: ${JSON.stringify({ type: 'text', content: chunk })}\n\n`);
           res.flush?.(); // Forzar envío inmediato de cada chunk
         }
       })
       .on('textDone', () => {
-        console.log('✅ Texto completado');
+        if (DEBUG_MODE) console.log('✅ Texto completado');
       })
       .on('end', () => {
-        console.log('🏁 Stream finalizado');
+        if (DEBUG_MODE) console.log('🏁 Stream finalizado');
         res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
         res.end();
       })
       .on('error', (error) => {
+        // Los errores siempre se muestran (independiente de DEBUG_MODE)
         console.error('❌ Error en stream:', error);
         res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
         res.end();
       });
 
   } catch (error) {
+    // Los errores siempre se muestran (independiente de DEBUG_MODE)
     console.error('❌ Error en handler:', error);
 
     // Si ya empezó el streaming, enviar error por SSE
